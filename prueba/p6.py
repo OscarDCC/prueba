@@ -2,7 +2,9 @@ import face_recognition
 import cv2
 import os
 import numpy as np
+import subprocess
 
+ruta_programa = '/home/jetson/prueba/rele.py'
 
 KNOWN_FACES_DIR = '/home/jetson/prueba/fotos'
 TOLERANCE = 0.6
@@ -34,6 +36,7 @@ while True:
         results = face_recognition.compare_faces(known_faces, face_encoding, TOLERANCE)
         match = None
         if True in results:
+            subprocess.run(['python3', ruta_programa])
             match = known_names[results.index(True)]
             print(f' - {match} from {results}')
             top_left = (face_location[3], face_location[0])
@@ -59,4 +62,5 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
 

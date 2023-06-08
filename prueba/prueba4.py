@@ -1,8 +1,7 @@
+import subprocess
 import face_recognition
 import cv2
 import os
-import numpy as np
-import subprocess
 
 KNOWN_FACES_DIR = '/home/jetson/prueba/fotos'
 TOLERANCE = 0.6
@@ -24,19 +23,16 @@ for name in os.listdir(KNOWN_FACES_DIR):
 print('Listo!')
 print('Inicializando cámara...')
 
-SetCam='gst-launch-1.0 nvarguscamerasrc ! "video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, format=(string)NV12, framerate=(fraction)30/1" ! nvvidconv ! nvegltransform ! nveglglessink -e'
+# Ejecutar el comando gst-launch-1.0 en un proceso separado
+command = "gst-launch-1.0 nvarguscamerasrc sensor_mode=0 ! 'video/x-raw(memory:NVMM),width=3820, height=2464, framerate=21/1, format=NV12' ! nvvidconv flip-method=0 ! 'video/x-raw,width=960, height=616' ! nvvidconv ! nvegltransform ! nveglglessink -e"
+subprocess.Popen(command, shell=True)
 
-
-# Capturar el video de la cámara en tiempo real
-cap = cv2.VideoCapture(SetCam)
+cap = cv2.VideoCapture(0)
 
 while True:
     ret, frame = cap.read()
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-    locations = face_recognition.face_locations(gray, model=MODEL)
-    encodings = face_recognition.face_encodings(gray, locations)
-
+    locations = face_recognition.face_locations(frame, model=MODEL)
+    encodings = face_recognition.face_encodings(frame, locations)
     for face_encoding, face_location in zip(encodings, locations):
         results = face_recognition.compare_faces(known_faces, face_encoding, TOLERANCE)
         match = None
@@ -54,6 +50,10 @@ while True:
                         (200, 200, 200), FONT_THICKNESS)
         else:
             print(' - desconocido')
+            top_left = (face_location[3], face_location[0])
+            bottom_right = (face_location[1], face_location[2])
+            color = [0, 0, 255]
+            cv2.rectangle(frame, top_left, bottom_right, color, FRAME_THICKNESS)
 
     cv2.imshow('Cámara', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -61,4 +61,5 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
 
